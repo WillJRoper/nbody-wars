@@ -68,16 +68,40 @@ Fixed timestep: dt = 1/120 second
 
 ### Prerequisites
 
-- **Node.js** (v18 or later)
-- **Emscripten** (latest version)
-  ```bash
-  # Install Emscripten
-  git clone https://github.com/emscripten-core/emsdk.git
-  cd emsdk
-  ./emsdk install latest
-  ./emsdk activate latest
-  source ./emsdk_env.sh
-  ```
+- **Node.js** (v18 or later): [Download Node.js](https://nodejs.org/)
+- **Emscripten** (latest version): Required for compiling the C++ engine to WebAssembly.
+
+#### Installing Emscripten
+
+**Option 1: Using EMSDK (Recommended)**
+This is the standard way to install Emscripten.
+
+```bash
+# Get the emsdk repo
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+
+# Download and install the latest SDK tools.
+./emsdk install latest
+
+# Make the "latest" SDK "active" for the current user. (writes .emscripten file)
+./emsdk activate latest
+
+# Activate PATH and other environment variables in the current terminal
+source ./emsdk_env.sh
+```
+
+**Option 2: MacOS via Homebrew**
+```bash
+brew install emscripten
+```
+
+**Verify Installation**
+Ensure `emcc` is available in your terminal:
+```bash
+emcc -v
+```
+*Note: If you use the EMSDK method, you must run `source ./emsdk_env.sh` in every new terminal session before building the project, or add it to your shell profile.*
 
 ### Build Instructions
 
@@ -87,12 +111,13 @@ Fixed timestep: dt = 1/120 second
    cd nbody-wars
    ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
    ```bash
    npm install
    ```
 
 3. **Build the project**
+   Ensure your Emscripten environment is active (see Prerequisites).
    ```bash
    npm run build
    ```
