@@ -46,5 +46,5 @@ private:
 
     void mergeAsteroids(Asteroid* a1, Asteroid* a2);
     void mergeBulletIntoAsteroid(Bullet* bullet, Asteroid* asteroid);
-    void createExplosion(Vec2 pos, int count, std::vector<Particle>& particles);
+    void createExplosion(Vec2 pos, int count, std::vector<Particle>& particles, float speedMin = 50.0f, float speedMax = 150.0f, float lifetimeMultiplier = 1.0f, int playerId = -1);
 };

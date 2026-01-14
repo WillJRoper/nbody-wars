@@ -161,17 +161,23 @@ Particle::Particle() {
     wraps = false;
     mass = 0.1f;
     maxLifetime = 1.0f;
+    playerId = -1;  // Default: white
 }
 
-void Particle::init(Vec2 position, Vec2 velocity) {
+void Particle::init(Vec2 position, Vec2 velocity, int particlePlayerId) {
     pos = position;
     vel = velocity;
     acc = Vec2(0, 0);
     lifetime = maxLifetime;
     active = true;
+    playerId = particlePlayerId;
 }
 
 void Particle::update(float dt) {
+    // Move particle based on initial velocity (no gravity)
+    pos += vel * dt;
+
+    // Decrease lifetime and deactivate when expired
     lifetime -= dt;
     if (lifetime <= 0) {
         active = false;

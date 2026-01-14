@@ -80,8 +80,9 @@ struct BlackHole : public Body {
 struct Particle : public Body {
     float lifetime;
     float maxLifetime;
+    int playerId;  // -1 for white (asteroids), 0/1 for ship colors
 
     Particle();
-    void init(Vec2 pos, Vec2 vel);
+    void init(Vec2 pos, Vec2 vel, int playerId = -1);
     void update(float dt);
 };

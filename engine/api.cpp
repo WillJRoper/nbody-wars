@@ -213,6 +213,7 @@ void engine_get_particle_data(void* handle, int index, float* outData) {
     outData[0] = particle.pos.x;
     outData[1] = particle.pos.y;
     outData[2] = particle.lifetime / particle.maxLifetime;  // Alpha
+    outData[3] = (float)particle.playerId;  // Player ID for color
 }
 
 EMSCRIPTEN_KEEPALIVE

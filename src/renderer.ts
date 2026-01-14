@@ -143,7 +143,20 @@ export class Renderer {
   }
 
   drawParticle(particle: ParticleData): void {
-    this.ctx.fillStyle = `rgba(255, 255, 255, ${particle.alpha})`;
+    // Color based on player ID
+    let color: string;
+    if (particle.playerId === 0) {
+      // Player 1 (green)
+      color = `rgba(0, 255, 0, ${particle.alpha})`;
+    } else if (particle.playerId === 1) {
+      // Player 2 (cyan)
+      color = `rgba(0, 255, 255, ${particle.alpha})`;
+    } else {
+      // Default white (asteroids, etc)
+      color = `rgba(255, 255, 255, ${particle.alpha})`;
+    }
+
+    this.ctx.fillStyle = color;
     this.ctx.fillRect(particle.x - 1, particle.y - 1, 2, 2);
   }
 

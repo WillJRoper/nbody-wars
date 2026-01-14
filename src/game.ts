@@ -39,7 +39,7 @@ export class Game {
         bhEnabled: true,
         shipMass: 1500,
         bulletMass: 100,
-        asteroidMass: 6000,
+        asteroidMass: 8000,
         asteroidCount: 4
       }
     };

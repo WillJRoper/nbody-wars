@@ -36,7 +36,7 @@ struct DifficultyConfig {
 
     DifficultyConfig()
         : bhSpawnRate(0.0005f), bhMassMult(1.0f), bhAccRadius(25.0f), bhEnabled(true),
-          shipMass(1500.0f), bulletMass(100.0f), asteroidBaseMass(6000.0f), asteroidCount(4) {}
+          shipMass(1500.0f), bulletMass(100.0f), asteroidBaseMass(8000.0f), asteroidCount(4) {}
 };
 
 struct InputState {

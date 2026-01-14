@@ -136,19 +136,33 @@ CollisionHandler::CollisionHandler(float worldWidth, float worldHeight)
     : worldWidth(worldWidth), worldHeight(worldHeight) {}
 
 void CollisionHandler::handleShipAsteroid(Ship* ship, Asteroid* asteroid, std::vector<Particle>& particles) {
+    // Calculate collision point (between ship and asteroid centers)
+    Vec2 dr = minimumImage(asteroid->pos - ship->pos, worldWidth, worldHeight);
+    float dist = dr.length();
+    Vec2 collisionPoint = ship->pos;
+    if (dist > 1e-6f) {
+        // Point on ship's surface towards asteroid
+        Vec2 direction = dr / dist;
+        collisionPoint = ship->pos + direction * ship->radius;
+    }
+
     // Ship loses a life
     ship->lives--;
     if (ship->lives <= 0) {
         ship->active = false;
+        // Massive death explosion: collision + ship breakup (with ship's color)
+        createExplosion(collisionPoint, 50, particles, 150.0f, 350.0f, 1.3f, ship->playerId);
+        createExplosion(ship->pos, 40, particles, 100.0f, 300.0f, 1.5f, ship->playerId);
     } else {
         // Respawn with invulnerability
         ship->invulnerable = true;
         ship->invulnerableTime = 3.0f;
+        // Single impact explosion at collision point only (with ship's color)
+        createExplosion(collisionPoint, 40, particles, 150.0f, 350.0f, 1.3f, ship->playerId);
+        // Respawn at center (no explosion here)
         ship->pos = Vec2(worldWidth * 0.5f, worldHeight * 0.5f);
         ship->vel = Vec2(0, 0);
     }
-
-    createExplosion(ship->pos, 20, particles);
 }
 
 void CollisionHandler::handleShipShip(Ship* ship1, Ship* ship2) {
@@ -323,31 +337,42 @@ void CollisionHandler::handleBulletAsteroid(Bullet* bullet, Asteroid* asteroid, 
 }
 
 void CollisionHandler::handleBlackHoleAccretion(Body* body, BlackHole* blackHole, std::vector<Particle>& particles) {
-    createExplosion(body->pos, 15, particles);
+    // Save original position before any modifications
+    Vec2 accretionPos = body->pos;
 
     if (body->type == EntityType::SHIP) {
         Ship* ship = static_cast<Ship*>(body);
         ship->lives--;
         if (ship->lives <= 0) {
             ship->active = false;
+            // Dramatic death by black hole: many particles sucked in (with ship's color)
+            createExplosion(accretionPos, 60, particles, 50.0f, 250.0f, 2.0f, ship->playerId);
         } else {
             ship->invulnerable = true;
             ship->invulnerableTime = 3.0f;
+            // Explosion at accretion point only (not at respawn location, with ship's color)
+            createExplosion(accretionPos, 40, particles, 50.0f, 200.0f, 1.5f, ship->playerId);
+            // Respawn at center (no explosion here)
             ship->pos = Vec2(worldWidth * 0.5f, worldHeight * 0.5f);
             ship->vel = Vec2(0, 0);
         }
     } else {
+        // Other entities get sucked in (white particles)
         body->active = false;
+        createExplosion(accretionPos, 20, particles, 50.0f, 150.0f, 1.0f, -1);
     }
 }
 
-void CollisionHandler::createExplosion(Vec2 pos, int count, std::vector<Particle>& particles) {
+void CollisionHandler::createExplosion(Vec2 pos, int count, std::vector<Particle>& particles, float speedMin, float speedMax, float lifetimeMultiplier, int playerId) {
     for (int i = 0; i < count; i++) {
         Particle p;
         float angle = (rand() % 360) * 3.14159f / 180.0f;
-        float speed = 50.0f + (rand() % 100);
+        float speedRange = speedMax - speedMin;
+        float speed = speedMin + (rand() % (int)(speedRange + 1));
         Vec2 vel(std::cos(angle) * speed, std::sin(angle) * speed);
-        p.init(pos, vel);
+        p.init(pos, vel, playerId);
+        p.maxLifetime *= lifetimeMultiplier;
+        p.lifetime = p.maxLifetime;
         particles.push_back(p);
     }
 }

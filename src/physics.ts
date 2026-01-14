@@ -299,15 +299,16 @@ export class PhysicsEngine {
     for (let i = 0; i < count; i++) {
       this.module._engine_get_particle_data(this.handle, i, this.tempPtr);
 
-      const heap = new Float32Array(this.module.HEAP8.buffer, this.tempPtr, 3);
-      for (let j = 0; j < 3; j++) {
+      const heap = new Float32Array(this.module.HEAP8.buffer, this.tempPtr, 4);
+      for (let j = 0; j < 4; j++) {
         this.tempBuffer[j] = heap[j];
       }
 
       particles.push({
         x: this.tempBuffer[0],
         y: this.tempBuffer[1],
-        alpha: this.tempBuffer[2]
+        alpha: this.tempBuffer[2],
+        playerId: Math.round(this.tempBuffer[3])
       });
     }
 

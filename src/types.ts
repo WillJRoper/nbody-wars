@@ -44,6 +44,7 @@ export interface ParticleData {
   x: number;
   y: number;
   alpha: number;
+  playerId: number;  // -1 for white (default), 0/1 for ship colors
 }
 
 export interface InputState {
