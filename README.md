@@ -3,7 +3,9 @@
 An educational Asteroids-like game with real gravitational N-body physics, powered by WebAssembly.
 
 ![N-Body Wars](https://img.shields.io/badge/physics-N--body-blue) ![WebAssembly](https://img.shields.io/badge/WebAssembly-654FF0?logo=webassembly&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
-<img width="1728" height="1117" alt="SCR-20260114-kyae" src="https://github.com/user-attachments/assets/9a27a38c-3cce-4181-9e58-94c28d1c27bc" />
+
+<img width="1231" height="931" alt="SCR-20260114-kyae" src="https://github.com/user-attachments/assets/0cfa21fc-1137-4fb0-9b13-256501f96820" />
+
 
 ## Features
 
