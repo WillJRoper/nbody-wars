@@ -136,38 +136,21 @@ export class Renderer {
   drawBlackHole(blackHole: BlackHoleData): void {
     const { x, y, accretionRadius, visualRadius } = blackHole;
 
-    // Event horizon (filled circle)
+    // Event horizon - solid black filled circle
     this.ctx.fillStyle = '#000';
     this.ctx.beginPath();
     this.ctx.arc(x, y, visualRadius, 0, Math.PI * 2);
     this.ctx.fill();
 
-    // Accretion disk (gradient)
-    const gradient = this.ctx.createRadialGradient(x, y, visualRadius, x, y, accretionRadius);
-    gradient.addColorStop(0, 'rgba(255, 100, 0, 0.6)');
-    gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.3)');
-    gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
-
-    this.ctx.fillStyle = gradient;
-    this.ctx.beginPath();
-    this.ctx.arc(x, y, accretionRadius, 0, Math.PI * 2);
-    this.ctx.fill();
-
-    // Rotating accretion effect
-    const time = Date.now() * 0.001;
-    this.ctx.strokeStyle = 'rgba(255, 150, 0, 0.5)';
+    // White outline around event horizon
+    this.ctx.strokeStyle = '#fff';
     this.ctx.lineWidth = 2;
-    for (let i = 0; i < 3; i++) {
-      const angle = time + (i * Math.PI * 2 / 3);
-      const r1 = visualRadius * 1.5;
-      const r2 = accretionRadius * 0.8;
-      this.ctx.beginPath();
-      this.ctx.arc(x, y, r1 + i * 5, angle, angle + Math.PI * 0.3);
-      this.ctx.stroke();
-    }
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, visualRadius, 0, Math.PI * 2);
+    this.ctx.stroke();
 
-    // Warning circle
-    this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    // Faint white outline at accretion radius (danger zone)
+    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
     this.ctx.lineWidth = 1;
     this.ctx.setLineDash([5, 5]);
     this.ctx.beginPath();

@@ -339,9 +339,9 @@ void GameEngine::handleCollisions() {
                 ships[bullet->playerId].score += 10;
             }
         } else if (b->type == EntityType::BLACK_HOLE) {
-            collisionHandler->handleBlackHoleAccretion(a, static_cast<BlackHole*>(b), particles);
+            collisionHandler->handleBlackHoleAccretion(a, static_cast<BlackHole*>(b), particles, asteroids, nextEntityId, collision.distance);
         } else if (a->type == EntityType::BLACK_HOLE) {
-            collisionHandler->handleBlackHoleAccretion(b, static_cast<BlackHole*>(a), particles);
+            collisionHandler->handleBlackHoleAccretion(b, static_cast<BlackHole*>(a), particles, asteroids, nextEntityId, collision.distance);
         }
     }
 }

@@ -377,7 +377,8 @@ void CollisionHandler::handleBulletAsteroid(Bullet* bullet, Asteroid* asteroid, 
     asteroid->active = false;
 }
 
-void CollisionHandler::handleBlackHoleAccretion(Body* body, BlackHole* blackHole, std::vector<Particle>& particles) {
+void CollisionHandler::handleBlackHoleAccretion(Body* body, BlackHole* blackHole, std::vector<Particle>& particles,
+                                                std::vector<Asteroid>& asteroids, int& nextId, float distance) {
     // Save original position before any modifications
     Vec2 accretionPos = body->pos;
 
@@ -397,8 +398,46 @@ void CollisionHandler::handleBlackHoleAccretion(Body* body, BlackHole* blackHole
             ship->pos = Vec2(worldWidth * 0.5f, worldHeight * 0.5f);
             ship->vel = Vec2(0, 0);
         }
+    } else if (body->type == EntityType::ASTEROID) {
+        // Asteroids are "nibbled" - split in half, one consumed, one escapes
+        Asteroid* asteroid = static_cast<Asteroid*>(body);
+
+        // Split asteroid if not at dust level
+        if (asteroid->size < 5) {
+            // Calculate direction away from black hole
+            Vec2 dr = asteroid->pos - blackHole->pos;
+            float dist = dr.length();
+            Vec2 awayDir = dist > 1e-6f ? dr / dist : Vec2(1, 0);
+
+            // Create one escaping fragment (opposite side from black hole)
+            Asteroid newAst;
+
+            // Position offset away from black hole
+            Vec2 offset = awayDir * asteroid->radius * 1.5f;
+            Vec2 newPos = asteroid->pos + offset;
+            newPos = wrapPosition(newPos, worldWidth, worldHeight);
+
+            // Velocity - fragment escapes away from black hole at high speed
+            float escapeSpeed = 150.0f + (rand() % 100);
+            Vec2 escapeVel = awayDir * escapeSpeed;
+            Vec2 newVel = asteroid->vel * 0.3f + escapeVel;
+
+            // Calculate base mass from current asteroid mass
+            float baseMass = asteroid->mass * (1 << asteroid->size);  // 2^size
+            newAst.init(nextId++, newPos, newVel, asteroid->size + 1, baseMass);
+            asteroids.push_back(newAst);
+
+            // Create particles for the consumed half (sucked into black hole)
+            createExplosion(asteroid->pos, 15, particles, 20.0f, 100.0f, 1.0f, -1);
+        } else {
+            // Dust-level asteroids just get consumed entirely
+            createExplosion(asteroid->pos, 20, particles, 50.0f, 150.0f, 1.0f, -1);
+        }
+
+        // Destroy original asteroid
+        asteroid->active = false;
     } else {
-        // Other entities get sucked in (white particles)
+        // Bullets and other entities get instantly sucked in (white particles)
         body->active = false;
         createExplosion(accretionPos, 20, particles, 50.0f, 150.0f, 1.0f, -1);
     }

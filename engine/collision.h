@@ -168,12 +168,20 @@ public:
      * @param body Object being accreted
      * @param blackHole Black hole doing the accreting
      * @param particles Particle vector for accretion effects
+     * @param asteroids Asteroid vector to spawn fragments
+     * @param nextId Next available entity ID for new asteroids
+     * @param distance Distance between body and black hole center
      *
-     * Deactivates the accreted object and creates particle explosion
-     * at the body's position. Works for any body type (ship, asteroid,
-     * bullet, etc).
+     * Behavior depends on body type:
+     * - Asteroids: Split like bullet hit - one half consumed, one escapes
+     * - Ships: Instant damage with respawn mechanic
+     * - Bullets: Instant destruction
+     *
+     * Asteroids are "nibbled" by splitting them in half. One fragment is
+     * immediately consumed, the other escapes away from the black hole.
      */
-    void handleBlackHoleAccretion(Body* body, BlackHole* blackHole, std::vector<Particle>& particles);
+    void handleBlackHoleAccretion(Body* body, BlackHole* blackHole, std::vector<Particle>& particles,
+                                  std::vector<Asteroid>& asteroids, int& nextId, float distance);
 
 private:
     float worldWidth, worldHeight;  ///< Domain size for respawn calculations
