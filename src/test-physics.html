@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Engine Test</title>
+  <style>
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+    }
+    .test {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #333;
+    }
+    .pass { border-color: #0f0; }
+    .fail { border-color: #f00; color: #f00; }
+    .pending { border-color: #ff0; color: #ff0; }
+    pre {
+      background: #111;
+      padding: 10px;
+      overflow-x: auto;
+    }
+    button {
+      background: #333;
+      color: #0f0;
+      border: 2px solid #0f0;
+      padding: 10px 20px;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #0f0;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>N-Body Wars Physics Engine Test Suite</h1>
+  <button id="runTests">Run All Tests</button>
+  <button id="clearTests">Clear Results</button>
+  <div id="results"></div>
+
+  <script type="module">
+    const results = document.getElementById('results');
+
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = `test ${type}`;
+      div.innerHTML = message;
+      results.appendChild(div);
+    }
+
+    function clear() {
+      results.innerHTML = '';
+    }
+
+    async function test(name, fn) {
+      log(`<strong>Testing: ${name}</strong>`, 'pending');
+      try {
+        await fn();
+        log(`✓ PASS: ${name}`, 'pass');
+        return true;
+      } catch (error) {
+        log(`✗ FAIL: ${name}<br><pre>${error.message}\n${error.stack}</pre>`, 'fail');
+        return false;
+      }
+    }
+
+    async function runTests() {
+      clear();
+      log('<h2>Starting Test Suite...</h2>', 'info');
+
+      let passed = 0;
+      let failed = 0;
+
+      // Test 1: Check if physics.js exists
+      if (await test('Check physics.js accessibility', async () => {
+        const response = await fetch('/physics.js');
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const text = await response.text();
+        if (!text.includes('createPhysicsModule')) {
+          throw new Error('physics.js does not contain createPhysicsModule');
+        }
+        log(`physics.js size: ${text.length} bytes`, 'info');
+      })) passed++; else failed++;
+
+      // Test 2: Check if physics.wasm exists
+      if (await test('Check physics.wasm accessibility', async () => {
+        const response = await fetch('/physics.wasm');
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const buffer = await response.arrayBuffer();
+        log(`physics.wasm size: ${buffer.byteLength} bytes`, 'info');
+        if (buffer.byteLength === 0) throw new Error('WASM file is empty');
+      })) passed++; else failed++;
+
+      // Test 3: Load physics module
+      let PhysicsModule = null;
+      if (await test('Load physics.js module', async () => {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = '/physics.js';
+          script.onload = () => {
+            if (typeof window.createPhysicsModule === 'function') {
+              log('createPhysicsModule function found', 'info');
+              resolve();
+            } else {
+              reject(new Error('createPhysicsModule not found on window object'));
+            }
+          };
+          script.onerror = () => reject(new Error('Failed to load physics.js script'));
+          document.head.appendChild(script);
+        });
+      })) passed++; else failed++;
+
+      // Test 4: Initialize WASM module
+      if (await test('Initialize WASM module', async () => {
+        PhysicsModule = await window.createPhysicsModule();
+        if (!PhysicsModule) throw new Error('Module initialization returned null');
+        log('Module initialized successfully', 'info');
+      })) passed++; else failed++;
+
+      // Test 5: Check exported functions
+      if (await test('Check exported functions', async () => {
+        const requiredFunctions = [
+          '_engine_create',
+          '_engine_destroy',
+          '_engine_step',
+          '_engine_set_mode',
+          '_engine_set_level',
+          '_engine_get_ship_count',
+          '_malloc',
+          '_free'
+        ];
+
+        const missing = [];
+        for (const fn of requiredFunctions) {
+          if (typeof PhysicsModule[fn] !== 'function') {
+            missing.push(fn);
+          }
+        }
+
+        if (missing.length > 0) {
+          throw new Error(`Missing functions: ${missing.join(', ')}`);
+        }
+
+        log(`All ${requiredFunctions.length} required functions found`, 'info');
+      })) passed++; else failed++;
+
+      // Test 6: Create engine instance
+      let engineHandle = 0;
+      if (await test('Create engine instance', async () => {
+        engineHandle = PhysicsModule._engine_create(1200, 900, 12345);
+        if (engineHandle === 0) throw new Error('Engine handle is 0 (null pointer)');
+        log(`Engine handle: ${engineHandle}`, 'info');
+      })) passed++; else failed++;
+
+      // Test 7: Set game mode
+      if (await test('Set game mode', async () => {
+        PhysicsModule._engine_set_mode(engineHandle, 0); // Solo mode
+        log('Game mode set to SOLO', 'info');
+      })) passed++; else failed++;
+
+      // Test 8: Set level
+      if (await test('Set level', async () => {
+        PhysicsModule._engine_set_level(engineHandle, 1); // Point mass
+        log('Level set to Point Mass', 'info');
+      })) passed++; else failed++;
+
+      // Test 9: Get initial state
+      if (await test('Get initial ship count', async () => {
+        const shipCount = PhysicsModule._engine_get_ship_count(engineHandle);
+        if (shipCount !== 1) throw new Error(`Expected 1 ship, got ${shipCount}`);
+        log(`Ship count: ${shipCount}`, 'info');
+      })) passed++; else failed++;
+
+      // Test 10: Get ship data
+      if (await test('Get ship data', async () => {
+        const dataSize = 10 * 4; // 10 floats
+        const dataPtr = PhysicsModule._malloc(dataSize);
+
+        PhysicsModule._engine_get_ship_data(engineHandle, 0, dataPtr);
+
+        const data = new Float32Array(PhysicsModule.HEAP8.buffer, dataPtr, 10);
+        const shipData = {
+          x: data[0],
+          y: data[1],
+          angle: data[2],
+          radius: data[3],
+          active: data[4],
+          invulnerable: data[5],
+          thrusting: data[6],
+          lives: data[7],
+          score: data[8],
+          playerId: data[9]
+        };
+
+        PhysicsModule._free(dataPtr);
+
+        log(`Ship data: ${JSON.stringify(shipData, null, 2)}`, 'info');
+
+        if (shipData.lives !== 3) throw new Error(`Expected 3 lives, got ${shipData.lives}`);
+        if (shipData.radius !== 10) throw new Error(`Expected radius 10, got ${shipData.radius}`);
+      })) passed++; else failed++;
+
+      // Test 11: Step simulation
+      if (await test('Step simulation 100 times', async () => {
+        for (let i = 0; i < 100; i++) {
+          PhysicsModule._engine_step(engineHandle);
+        }
+        log('Simulation stepped 100 times successfully', 'info');
+      })) passed++; else failed++;
+
+      // Test 12: Set input
+      if (await test('Set input and step', async () => {
+        PhysicsModule._engine_set_input(engineHandle, 0, 0, 0, 1, 0); // Thrust
+        PhysicsModule._engine_step(engineHandle);
+
+        const dataPtr = PhysicsModule._malloc(40);
+        PhysicsModule._engine_get_ship_data(engineHandle, 0, dataPtr);
+        const data = new Float32Array(PhysicsModule.HEAP8.buffer, dataPtr, 10);
+        const thrusting = data[6];
+        PhysicsModule._free(dataPtr);
+
+        log(`Ship thrusting: ${thrusting === 1}`, 'info');
+      })) passed++; else failed++;
+
+      // Test 13: Get potential info
+      if (await test('Get potential info', async () => {
+        const namePtr = PhysicsModule._engine_get_potential_name(engineHandle);
+        const name = PhysicsModule.UTF8ToString(namePtr);
+        log(`Potential name: ${name}`, 'info');
+        if (!name) throw new Error('Potential name is empty');
+      })) passed++; else failed++;
+
+      // Test 14: Memory allocation
+      if (await test('Memory allocation test', async () => {
+        const ptr = PhysicsModule._malloc(1024);
+        if (ptr === 0) throw new Error('malloc returned null');
+        PhysicsModule._free(ptr);
+        log('Memory allocation/deallocation successful', 'info');
+      })) passed++; else failed++;
+
+      // Test 15: Destroy engine
+      if (await test('Destroy engine', async () => {
+        PhysicsModule._engine_destroy(engineHandle);
+        log('Engine destroyed successfully', 'info');
+      })) passed++; else failed++;
+
+      // Summary
+      log(`<h2>Test Summary</h2>
+        <p>Total: ${passed + failed}</p>
+        <p style="color: #0f0;">Passed: ${passed}</p>
+        <p style="color: #f00;">Failed: ${failed}</p>
+        <p>Success Rate: ${((passed / (passed + failed)) * 100).toFixed(1)}%</p>`,
+        failed === 0 ? 'pass' : 'fail');
+    }
+
+    document.getElementById('runTests').addEventListener('click', runTests);
+    document.getElementById('clearTests').addEventListener('click', clear);
+
+    // Auto-run tests on load
+    window.addEventListener('load', () => {
+      setTimeout(runTests, 500);
+    });
+  </script>
+</body>
+</html>

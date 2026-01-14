@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N-Body Wars - Asteroids with Real Physics</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    #gameContainer {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      aspect-ratio: 4/3;
+    }
+
+    #gameCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+      border: 2px solid #333;
+    }
+
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    #ui > * {
+      pointer-events: auto;
+    }
+
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      text-shadow: 0 0 3px #000;
+    }
+
+    .menu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #fff;
+      padding: 30px;
+      min-width: 400px;
+      display: none;
+    }
+
+    .menu.active {
+      display: block;
+    }
+
+    .menu h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 32px;
+      letter-spacing: 2px;
+    }
+
+    .menu button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .menu button:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    .menu select, .menu input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    .menu label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+
+    .info-text {
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 15px 0;
+      color: #ccc;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 24px;
+      display: none;
+    }
+
+    .loading.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="1200" height="900"></canvas>
+    <div id="ui">
+      <div id="hud">
+        <div id="player1Info">P1: Lives: 3 | Score: 0</div>
+        <div id="levelInfo">Level: None</div>
+        <div id="player2Info"></div>
+      </div>
+
+      <div id="mainMenu" class="menu active">
+        <h1>N-BODY WARS</h1>
+        <p class="info-text">Asteroids with real gravitational N-body physics</p>
+        <button id="startGame">START GAME</button>
+        <button id="showModeMenu">GAME MODE</button>
+        <button id="showControlsMenu">CONTROLS</button>
+        <button id="showDifficultyMenu">DIFFICULTY</button>
+        <button id="showAboutMenu">ABOUT</button>
+      </div>
+
+      <div id="modeMenu" class="menu">
+        <h1>GAME MODE</h1>
+        <button data-mode="solo">SOLO</button>
+        <button data-mode="coop">CO-OP</button>
+        <button data-mode="versus">VERSUS</button>
+        <button id="backFromMode">BACK</button>
+      </div>
+
+      <div id="levelMenu" class="menu">
+        <h1>SELECT POTENTIAL</h1>
+        <p class="info-text">Choose the gravitational potential for your game</p>
+        <button data-level="0">THE VOID (No Potential)</button>
+        <button data-level="1">CENTRAL BLACK HOLE</button>
+        <button data-level="2">HARMONIC WELL</button>
+        <button data-level="3">GALAXY DISK</button>
+        <button data-level="4">DARK MATTER HALO</button>
+        <button id="backFromLevel">BACK</button>
+      </div>
+
+      <div id="controlsMenu" class="menu">
+        <h1>CONTROLS</h1>
+        <div class="info-text">
+          <strong>Player 1:</strong><br>
+          Left/Right Arrow: Rotate<br>
+          Up Arrow: Thrust<br>
+          Down Arrow: Brake<br>
+          Space: Shoot<br><br>
+
+          <strong>Player 2 (Co-op/Versus):</strong><br>
+          A/D: Rotate<br>
+          W: Thrust<br>
+          S: Brake<br>
+          E: Shoot<br><br>
+
+          <strong>General:</strong><br>
+          P: Pause<br>
+          ESC: Menu
+        </div>
+        <p class="info-text">Gamepad support: Connect a gamepad and use any button to auto-map controls.</p>
+        <button id="backFromControls">BACK</button>
+      </div>
+
+      <div id="difficultyMenu" class="menu">
+        <h1>DIFFICULTY</h1>
+        <label>Initial Asteroid Count:</label>
+        <input type="range" id="asteroidCount" min="1" max="20" step="1" value="4">
+        <span id="asteroidCountValue">4</span>
+
+        <label>Ship Mass:</label>
+        <input type="range" id="shipMass" min="100" max="10000" step="100" value="1500">
+        <span id="shipMassValue">1500</span>
+
+        <label>Bullet Mass:</label>
+        <input type="range" id="bulletMass" min="10" max="500" step="10" value="100">
+        <span id="bulletMassValue">100</span>
+
+        <label>Large Asteroid Mass (splits halve):</label>
+        <input type="range" id="asteroidMass" min="1000" max="20000" step="500" value="6000">
+        <span id="asteroidMassValue">6000</span>
+
+        <label>Black Hole Spawn Rate:</label>
+        <input type="range" id="bhSpawnRate" min="0.0001" max="0.005" step="0.0001" value="0.0005">
+        <span id="bhSpawnRateValue">0.0005</span>
+
+        <label>Black Hole Mass Multiplier:</label>
+        <input type="range" id="bhMassMult" min="0.5" max="3" step="0.1" value="1.0">
+        <span id="bhMassMultValue">1.0</span>
+
+        <label>Black Hole Accretion Radius:</label>
+        <input type="range" id="bhAccRadius" min="10" max="50" step="5" value="25">
+        <span id="bhAccRadiusValue">25</span>
+
+        <button id="backFromDifficulty">BACK</button>
+      </div>
+
+      <div id="aboutMenu" class="menu">
+        <h1>ABOUT</h1>
+        <div class="info-text">
+          N-Body Wars is an educational game demonstrating real gravitational physics.
+          <br><br>
+          <strong>Physics Concepts:</strong><br>
+          • N-body gravitational simulation<br>
+          • Barnes-Hut quadtree optimization<br>
+          • External gravitational potentials<br>
+          • Inelastic collisions and momentum conservation<br>
+          • Periodic boundary conditions (torus topology)<br>
+          • Black hole accretion<br>
+          <br>
+          <strong>Technical:</strong><br>
+          • C++ physics engine compiled to WebAssembly<br>
+          • Fixed-timestep deterministic simulation<br>
+          • Scales to 1000+ bodies at 60 FPS<br>
+        </div>
+        <button id="backFromAbout">BACK</button>
+      </div>
+
+      <div id="pauseMenu" class="menu">
+        <h1>PAUSED</h1>
+        <div class="info-text" id="pausePhysicsInfo"></div>
+        <label style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
+          <input type="checkbox" id="blackHolesToggle" checked style="width: auto;">
+          <span>Enable Black Holes</span>
+        </label>
+        <button id="resumeGame">RESUME</button>
+        <button id="quitToMenu">QUIT TO MENU</button>
+      </div>
+
+      <div id="gameOverMenu" class="menu">
+        <h1>GAME OVER</h1>
+        <div class="info-text" id="gameOverStats"></div>
+        <button id="restartGame">RESTART</button>
+        <button id="backToMenu">MAIN MENU</button>
+      </div>
+
+      <div id="loading" class="loading">
+        Loading physics engine...
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

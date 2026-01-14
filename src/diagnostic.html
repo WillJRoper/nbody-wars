@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Diagnostic</title>
+  <style>
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      border: 1px solid #333;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Physics Module Diagnostic</h1>
+  <div id="output"></div>
+
+  <script>
+    const output = document.getElementById('output');
+
+    function log(msg) {
+      const pre = document.createElement('pre');
+      pre.textContent = msg;
+      output.appendChild(pre);
+    }
+
+    async function diagnose() {
+      log('=== Starting Diagnostic ===');
+      log(`Current URL: ${window.location.href}`);
+      log(`Base URL: ${window.location.origin}`);
+
+      // Check 1: Fetch physics.js
+      log('\n1. Checking /physics.js...');
+      try {
+        const response = await fetch('/physics.js');
+        log(`Status: ${response.status} ${response.statusText}`);
+        log(`Content-Type: ${response.headers.get('content-type')}`);
+        const text = await response.text();
+        log(`Size: ${text.length} bytes`);
+        log(`Contains createPhysicsModule: ${text.includes('createPhysicsModule')}`);
+      } catch (error) {
+        log(`ERROR: ${error.message}`);
+      }
+
+      // Check 2: Fetch physics.wasm
+      log('\n2. Checking /physics.wasm...');
+      try {
+        const response = await fetch('/physics.wasm');
+        log(`Status: ${response.status} ${response.statusText}`);
+        log(`Content-Type: ${response.headers.get('content-type')}`);
+        const buffer = await response.arrayBuffer();
+        log(`Size: ${buffer.byteLength} bytes`);
+        log(`Is valid WASM: ${buffer.byteLength > 0 && new Uint8Array(buffer)[0] === 0x00}`);
+      } catch (error) {
+        log(`ERROR: ${error.message}`);
+      }
+
+      // Check 3: Load script
+      log('\n3. Loading physics.js as script...');
+      try {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = '/physics.js';
+          script.onload = () => {
+            log('Script loaded successfully');
+            resolve();
+          };
+          script.onerror = (error) => {
+            log(`Script load error: ${error}`);
+            reject(error);
+          };
+          document.head.appendChild(script);
+        });
+
+        log(`window.createPhysicsModule exists: ${typeof window.createPhysicsModule}`);
+
+        if (typeof window.createPhysicsModule === 'function') {
+          log('\n4. Initializing WASM module...');
+          const module = await window.createPhysicsModule();
+          log('Module initialized successfully!');
+          log(`Module type: ${typeof module}`);
+          log(`Has _engine_create: ${typeof module._engine_create === 'function'}`);
+          log(`Has _malloc: ${typeof module._malloc === 'function'}`);
+          log(`Has HEAPF32: ${module.HEAPF32 instanceof Float32Array}`);
+
+          log('\n5. Creating engine...');
+          const handle = module._engine_create(1200, 900, 12345);
+          log(`Engine handle: ${handle}`);
+
+          if (handle !== 0) {
+            log('\n✓ SUCCESS! Physics engine is working correctly.');
+          } else {
+            log('\n✗ ERROR: Engine handle is 0 (null)');
+          }
+        } else {
+          log('\n✗ ERROR: createPhysicsModule not found on window');
+        }
+      } catch (error) {
+        log(`\n✗ ERROR: ${error.message}`);
+        log(error.stack);
+      }
+    }
+
+    diagnose();
+  </script>
+</body>
+</html>
