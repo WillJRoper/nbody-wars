@@ -1,7 +1,29 @@
+/**
+ * @file entity.cpp
+ * @brief Implementation of game entity classes
+ *
+ * Implements constructors, initialization, and update logic for all entity
+ * types. Handles entity-specific behavior like ship controls, asteroid
+ * rotation, bullet lifetime, and particle movement. Each entity type has
+ * carefully tuned physical properties for balanced gameplay.
+ */
+
 #include "entity.h"
 #include <cmath>
 
+// ============================================================================
 // Ship implementation
+// ============================================================================
+
+/**
+ * @brief Ship default constructor
+ *
+ * Initializes ship with default properties:
+ * - Mass: 1500 (comparable to small asteroid for N-body interactions)
+ * - Radius: 10 pixels (collision detection)
+ * - Lives: 3 (standard difficulty)
+ * - Angle: -π/2 (pointing upward in screen coordinates)
+ */
 Ship::Ship() {
     type = EntityType::SHIP;
     wraps = true;
@@ -51,7 +73,16 @@ void Ship::update(float dt) {
     }
 }
 
+// ============================================================================
 // Asteroid implementation
+// ============================================================================
+
+/**
+ * @brief Asteroid default constructor
+ *
+ * Creates asteroid with default rendering properties. Actual size, mass,
+ * and velocity are set by init() based on size class.
+ */
 Asteroid::Asteroid() {
     type = EntityType::ASTEROID;
     wraps = true;
@@ -106,7 +137,18 @@ void Asteroid::update(float dt) {
     rotation += rotationSpeed * dt;
 }
 
+// ============================================================================
 // Bullet implementation
+// ============================================================================
+
+/**
+ * @brief Bullet default constructor
+ *
+ * Sets bullet properties:
+ * - Mass: 100 (light but participates in N-body gravity)
+ * - Radius: 2 pixels (small collision area)
+ * - Lifetime: 3 seconds (prevents screen clutter)
+ */
 Bullet::Bullet() {
     type = EntityType::BULLET;
     wraps = true;
@@ -132,7 +174,18 @@ void Bullet::update(float dt) {
     }
 }
 
+// ============================================================================
 // BlackHole implementation
+// ============================================================================
+
+/**
+ * @brief BlackHole default constructor
+ *
+ * Sets black hole properties:
+ * - wraps: false (black holes drift off screen and are removed)
+ * - visualRadius: 15 pixels (event horizon rendering size)
+ * Mass and accretion radius set by init() based on difficulty.
+ */
 BlackHole::BlackHole() {
     type = EntityType::BLACK_HOLE;
     wraps = false;  // Black holes don't wrap
@@ -155,7 +208,19 @@ bool BlackHole::isOffscreen(float worldWidth, float worldHeight) const {
            pos.y < -margin || pos.y > worldHeight + margin;
 }
 
+// ============================================================================
 // Particle implementation
+// ============================================================================
+
+/**
+ * @brief Particle default constructor
+ *
+ * Sets particle properties:
+ * - wraps: false (particles fade away, don't wrap around screen)
+ * - mass: 0.1 (negligible, particles don't participate in gravity)
+ * - maxLifetime: 1 second (particles fade within this time)
+ * - playerId: -1 (white color by default)
+ */
 Particle::Particle() {
     type = EntityType::PARTICLE;
     wraps = false;

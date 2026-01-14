@@ -1,10 +1,43 @@
+/**
+ * @file collision.cpp
+ * @brief Implementation of collision detection and response systems
+ *
+ * Handles all collision logic for the game including:
+ * - Detection using radius-based overlap tests with periodic boundaries
+ * - Response for all entity pair types (elastic collisions, merging, damage)
+ * - Explosion particle generation with color coding
+ * - Asteroid splitting mechanics
+ * - Black hole accretion
+ *
+ * Uses minimum image convention for periodic boundaries to correctly
+ * detect collisions across domain wraps.
+ */
+
 #include "collision.h"
 #include <cmath>
 #include <algorithm>
 
+// ============================================================================
+// CollisionDetector implementation
+// ============================================================================
+
+/**
+ * @brief Construct collision detector
+ * @param worldWidth Width of periodic domain
+ * @param worldHeight Height of periodic domain
+ */
 CollisionDetector::CollisionDetector(float worldWidth, float worldHeight)
     : worldWidth(worldWidth), worldHeight(worldHeight) {}
 
+/**
+ * @brief Get nearest periodic image of a position relative to reference
+ * @param pos Position to adjust
+ * @param reference Reference position
+ * @return Adjusted position using minimum image convention
+ *
+ * Used to correctly compute distances when objects may be closer through
+ * periodic wrapping than through direct distance.
+ */
 Vec2 CollisionDetector::getMinimumImagePos(const Vec2& pos, const Vec2& reference) {
     Vec2 dr = pos - reference;
     dr = minimumImage(dr, worldWidth, worldHeight);
@@ -131,7 +164,15 @@ void CollisionDetector::detectCollisions(
     }
 }
 
-// Collision Handler implementation
+// ============================================================================
+// CollisionHandler implementation
+// ============================================================================
+
+/**
+ * @brief Construct collision handler
+ * @param worldWidth Width of simulation domain
+ * @param worldHeight Height of simulation domain
+ */
 CollisionHandler::CollisionHandler(float worldWidth, float worldHeight)
     : worldWidth(worldWidth), worldHeight(worldHeight) {}
 

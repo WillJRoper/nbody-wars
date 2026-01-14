@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Canvas 2D rendering system for game entities
+ *
+ * Handles all visual rendering including ships, asteroids, bullets, black holes,
+ * and particle effects. Uses HTML5 Canvas 2D context for vector graphics.
+ * Supports player color coding (green for player 0, cyan for player 1) and
+ * dynamic effects like thrust flames, invulnerability flashing, and black hole
+ * accretion visualization.
+ */
+
 import type {
   ShipData,
   AsteroidData,
@@ -6,12 +16,23 @@ import type {
   ParticleData
 } from './types';
 
+/**
+ * Canvas 2D renderer for all game entities
+ *
+ * Renders vector graphics for ships, asteroids, bullets, black holes, and particles.
+ * All rendering uses the Canvas 2D API with stroke-based vector graphics for a
+ * classic arcade aesthetic.
+ */
 export class Renderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private width: number;
   private height: number;
 
+  /**
+   * Create renderer for a canvas element
+   * @param canvas HTML canvas element to render to
+   */
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
@@ -19,11 +40,24 @@ export class Renderer {
     this.height = canvas.height;
   }
 
+  /**
+   * Clear the canvas to black background
+   */
   clear(): void {
     this.ctx.fillStyle = '#000';
     this.ctx.fillRect(0, 0, this.width, this.height);
   }
 
+  /**
+   * Draw a player ship with color coding and effects
+   * @param ship Ship data from physics engine
+   *
+   * Features:
+   * - Triangle shape pointing in direction of travel
+   * - Color coded: green (player 0), cyan (player 1)
+   * - Thrust flame when thrusting
+   * - Flashing effect during invulnerability
+   */
   drawShip(ship: ShipData): void {
     if (!ship.active) return;
 

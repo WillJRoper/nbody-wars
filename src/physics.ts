@@ -1,3 +1,18 @@
+/**
+ * @fileoverview WebAssembly physics engine interface
+ *
+ * Provides TypeScript wrapper around the C++ physics engine compiled to WebAssembly.
+ * Handles WASM module loading, memory management, and data marshalling between
+ * JavaScript and C++. All physics calculations (N-body gravity, collisions, etc.)
+ * run in the WASM module for maximum performance.
+ *
+ * Data flow:
+ * 1. JavaScript sends input state and configuration to WASM
+ * 2. WASM physics engine updates simulation
+ * 3. JavaScript reads entity data from WASM memory via typed arrays
+ * 4. Renderer draws entities based on retrieved data
+ */
+
 import type {
   ShipData,
   AsteroidData,
@@ -9,6 +24,10 @@ import type {
   GameMode
 } from './types';
 
+/**
+ * Emscripten module interface with physics engine functions
+ * All functions are exported from C++ with EMSCRIPTEN_KEEPALIVE
+ */
 interface PhysicsModule extends EmscriptenModule {
   _engine_create: (width: number, height: number, seed: number) => number;
   _engine_destroy: (handle: number) => void;
@@ -35,16 +54,46 @@ interface PhysicsModule extends EmscriptenModule {
   _engine_get_potential_description: (handle: number) => number;
 }
 
+/**
+ * TypeScript wrapper for WebAssembly physics engine
+ *
+ * Manages the lifecycle of the C++ physics engine running in WebAssembly.
+ * Handles asynchronous WASM loading, memory allocation for data transfer,
+ * and provides a clean JavaScript API for all physics operations.
+ *
+ * Usage:
+ * ```typescript
+ * const physics = new PhysicsEngine();
+ * await physics.initialize(800, 600);
+ * physics.setLevel(1); // Point mass potential
+ * physics.step(); // Advance simulation
+ * const ships = physics.getShips(); // Get entity data
+ * physics.destroy(); // Clean up
+ * ```
+ */
 export class PhysicsEngine {
-  private module: any = null;
-  private handle: number = 0;
-  private tempBuffer: Float32Array;
-  private tempPtr: number = 0;
+  private module: any = null;           // Emscripten WASM module
+  private handle: number = 0;           // Opaque pointer to C++ GameEngine
+  private tempBuffer: Float32Array;     // Reusable buffer for data transfer
+  private tempPtr: number = 0;          // WASM memory address of tempBuffer
 
+  /**
+   * Create physics engine wrapper
+   * Initializes temporary buffer for efficient data transfer
+   */
   constructor() {
     this.tempBuffer = new Float32Array(16);
   }
 
+  /**
+   * Load WASM module and create physics engine
+   * @param width World width in pixels
+   * @param height World height in pixels
+   * @param seed Random seed for reproducible simulations (default: Date.now())
+   *
+   * Asynchronously loads the physics.js script which contains the WASM module,
+   * creates the C++ engine instance, and allocates shared memory for data transfer.
+   */
   async initialize(width: number, height: number, seed: number = Date.now()): Promise<void> {
     // Load the WASM module dynamically at runtime
     const script = document.createElement('script');

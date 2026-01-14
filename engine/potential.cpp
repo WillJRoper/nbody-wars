@@ -1,5 +1,27 @@
+/**
+ * @file potential.cpp
+ * @brief Implementation of potential factory function
+ *
+ * Creates instances of external gravitational potentials with physics-based
+ * parameter tuning. Each level provides a different orbital dynamics
+ * environment for gameplay variety.
+ */
+
 #include "potential.h"
 
+/**
+ * @brief Factory function to create potential by level ID
+ * @param levelId Level identifier (0-4)
+ * @param worldCenter Center position for potential
+ * @param worldWidth Width of simulation domain (for scaling parameters)
+ * @return Unique pointer to created potential
+ *
+ * Parameter tuning notes:
+ * - Level 1 (Point Mass): GM=50000 gives stable circular orbits at typical distances
+ * - Level 2 (Harmonic): omega²=0.0001 creates gentle oscillatory motion
+ * - Level 3 (Logarithmic): v0=10 with rc=0.1*width provides mild rotation
+ * - Level 4 (NFW): rho_s and r_s tuned for realistic dark matter halo effects
+ */
 std::unique_ptr<IExternalPotential> createPotential(int levelId, Vec2 worldCenter, float worldWidth) {
     switch (levelId) {
         case 0:

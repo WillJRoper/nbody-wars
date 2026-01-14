@@ -1,3 +1,22 @@
+/**
+ * @file api.cpp
+ * @brief WebAssembly C API for the game engine
+ *
+ * Provides a C-style interface to the C++ GameEngine for use from JavaScript
+ * via WebAssembly. All functions are exported with EMSCRIPTEN_KEEPALIVE to
+ * prevent optimization/removal during compilation.
+ *
+ * The API follows a handle-based pattern:
+ * 1. Create engine with engine_create() - returns opaque handle
+ * 2. Configure engine with engine_set_* functions
+ * 3. Update simulation with engine_step()
+ * 4. Query state with engine_get_* functions
+ * 5. Clean up with engine_destroy()
+ *
+ * Data is transferred to JavaScript via typed arrays passed as pointers,
+ * avoiding expensive string marshalling or complex object serialization.
+ */
+
 #include "engine.h"
 #include <emscripten/emscripten.h>
 #include <cstring>
@@ -5,7 +24,20 @@
 // C API for WASM
 extern "C" {
 
+// ============================================================================
 // Engine lifecycle
+// ============================================================================
+
+/**
+ * @brief Create a new game engine instance
+ * @param width World width in pixels
+ * @param height World height in pixels
+ * @param seed Random seed for reproducible spawning
+ * @return Opaque handle to engine instance (void*)
+ *
+ * Allocates a GameEngine on the heap and returns it as an opaque pointer.
+ * JavaScript treats this as an integer handle.
+ */
 EMSCRIPTEN_KEEPALIVE
 void* engine_create(float width, float height, uint32_t seed) {
     return new GameEngine(width, height, seed);

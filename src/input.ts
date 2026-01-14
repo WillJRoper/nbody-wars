@@ -1,21 +1,55 @@
+/**
+ * @fileoverview Player input management with keyboard and gamepad support
+ *
+ * Handles input from multiple sources (keyboard, gamepad) for up to 2 players.
+ * Supports customizable key/button mappings with localStorage persistence.
+ * Merges input from different sources (keyboard OR gamepad) for each player.
+ *
+ * Default mappings:
+ * - Player 1 (Keyboard): Arrow keys + Space
+ * - Player 2 (Keyboard): WASD + E
+ * - Both players (Gamepad): D-pad + Button 0 (A/X)
+ */
+
 import type { InputState } from './types';
 
+/**
+ * Keyboard key mapping for one player
+ */
 interface KeyMapping {
-  left: string;
-  right: string;
-  thrust: string;
-  brake: string;
-  shoot: string;
+  left: string;    // Rotate left key
+  right: string;   // Rotate right key
+  thrust: string;  // Thrust key
+  brake: string;   // Brake key
+  shoot: string;   // Shoot key
 }
 
+/**
+ * Gamepad button mapping for one player
+ * Uses button indices from Gamepad API standard mapping
+ */
 interface GamepadMapping {
-  left: number;
-  right: number;
-  thrust: number;
-  brake: number;
-  shoot: number;
+  left: number;    // D-pad left or axis threshold
+  right: number;   // D-pad right or axis threshold
+  thrust: number;  // D-pad up or axis threshold
+  brake: number;   // D-pad down or axis threshold
+  shoot: number;   // Fire button (typically A/X)
 }
 
+/**
+ * Multi-source input manager with customizable mappings
+ *
+ * Combines keyboard and gamepad input for up to 2 players. Each player's
+ * input is the logical OR of their keyboard and gamepad sources, allowing
+ * flexible control schemes. Mappings persist to localStorage.
+ *
+ * Features:
+ * - Dual input sources (keyboard + gamepad)
+ * - Customizable key/button mappings
+ * - Persistent configuration
+ * - Browser default prevention for game keys
+ * - Analog stick support with deadzone
+ */
 export class InputManager {
   private keyStates: Map<string, boolean> = new Map();
   private inputStates: [InputState, InputState] = [
