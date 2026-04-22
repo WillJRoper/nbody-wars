@@ -315,7 +315,6 @@ Issues and pull requests welcome! Areas for improvement:
 - More game modes
 - Visual effects and polish
 - Mobile touch controls
-- Save/load game states
 
 ---
 
